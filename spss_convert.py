@@ -5,6 +5,7 @@ from pandas.api.types import is_string_dtype
 from pandas.api.types import is_numeric_dtype
 import numpy as np
 import savReaderWriter as spss
+from collections import defaultdict
 
 """
 To fire up python3 environment: source activate py36
@@ -65,9 +66,7 @@ def readSav(fname):
     with spss.SavReader(fname) as reader:
         header = reader.header
         records = reader.all()
-    
     df = pd.DataFrame(records,columns=header)
-    
     # Decode the encoded data
     df.rename(columns=lambda x: x.decode("utf-8"), inplace=True)
     df.rename(columns=lambda x: x.translate(str.maketrans(' /()?','_____')), inplace=True)
@@ -75,44 +74,75 @@ def readSav(fname):
         if is_string_dtype(df[c]): df[c] = df[c].str.decode("utf-8")
     return df
 
-
-def FixSav(df):
+def FixIntervention(df):
     """Fix sample number and add Event column"""
     def f(sn):
         if not np.isnan(sn):
             sn = 'F{:04d}'.format(int(sn))
         return sn
-    df['Sample_number'] = df['SampleNumber'].apply(f)
-    
+    # Delete any columns where SampleNumber is NA as we can't do anything with it
+    df['SampleNumber'].dropna(inplace=True)
+    df['Sample_Number'] = df['SampleNumber'].apply(f)
+    df.drop('SampleNumber',axis=1)
+
+    festival_codes = { 'BoomTown' : ('BT2017',4),
+                       'KC' : ('KC2017',4),
+                       'SGP' : ('SGP2017',2)
+                       }
+    # Delete any columns where Festival is nan
+    df['Festival'].dropna(inplace=True)
+    #df.where("Festival" != np.nan, inplace=True)
     def f(x):
-        if x in ['2017-08-11', '2017-08-11 00:00:00' ]: x = 'BT2017'
-        return x
-    df['Event'] = df['Date'].apply(f)
+        #if x in ['2017-08-11', '2017-08-11 00:00:00' ]: x = 'BT2017'
+        return festival_codes[x][0]
+    df['Event_Name'] = df['Festival'].apply(f)
+    #del df['Festival']
+    df.drop('Festival',axis=1)
+    
+    labels = ['SubmittedSubstanceAs']
+    df.loc[:, labels] = df[labels].apply(lambda x: x.str.upper())
     return
 
+def condition_data(df):
+    labels = ['Bought_as', 'Client_suspicion', 'Service_User_Pill_Logo', 'Tester_Logo_Suggestion',
+              'Colour', 'FTIR_main_result']
+    df.loc[:, labels] = df[labels].apply(lambda x: x.str.upper())
+    #return  df[labels].apply(lambda x: x.str.upper())
+#     return  df[labels].apply(lambda x: x.str.upper())
+    #df[labels].str.upper()
+#     labels = ['Tester_Logo_Suggestion']
+#     for l in labels:
+#         fix = defaultdict(set) # Dict of key to possible variations
+#         #print(df[l].dtype)
+#         #df[c] = df[c].astype(int)
+#         all = list(set(df[l].values))
+#         print("ALL ",sorted([str(a) for a in all]))
+#         #Check if are same when capitalised
+#         for i in range(len(all)):
+#             for j in range(len(all)):
+#                 if j <= i: continue
+#                 if str(all[i]).lower() == str(all[j]).lower():
+#                     fix[str(all[i].lower())].update([str(all[i]),str(all[j])])
+#                     
+#         print("MATCH FOR ",fix)
+    
 
-fname = '2017 The Loop - collated sample data.xlsx'
-df = pd.read_excel(fname,sheetname='BT2017', converters={'Sample submission time': str})
-df.rename(columns=lambda x: x.translate(str.maketrans(' /()?','_____')), inplace=True)
+fn_testing = '2017 The Loop - collated sample data.xlsx'
+df1 = pd.read_excel(fn_testing ,sheetname='Collated Data', converters={'Sample submission time': str})
+#df1 = pd.read_excel(fn_testing ,sheetname=4, converters={'Sample submission time': str})
+df1.rename(columns=lambda x: x.translate(str.maketrans(' /()?','_____')), inplace=True)
+condition_data(df1)
 
+fn_intervention = 'The_Loop_2017_Final_Interventions.xlsx'  
+fn_intervention = 'The_Loop_2017_Final_Interventions_labels.xlsx'  
+df2 = pd.read_excel(fn_intervention, converters={'Date': str, 'Time' : str})
+FixIntervention(df2)
 
-fname = 'The Loop_662.sav'  
-df1 = readSav(fname)
-FixSav(df1)
-#writeSav(df1,'The Loop_662_2.sav')
-#df1 = readSav(fname)
-#df1.to_csv('foo.csv')
+dft = pd.merge(df1, df2, how='inner', on=['Event_Name','Sample_Number'])
 
-# fname = 'The Loop_662.xlsx'
-# df1 = pd.read_excel(fname, converters={'Date': str, 'Time' : str})
-# FixSav(df1)
-
-dft = pd.merge(df, df1, how='inner', on=['Event','Sample_number'])
-writeSav(dft,'merge_from_sav.sav')
-
-# writer = pd.ExcelWriter('merge.xlsx')
-# dft.to_excel(writer,'Sheet1')
-# writer.save()
+writer = pd.ExcelWriter('merge.xlsx')
+dft.to_excel(writer,'MergedData',index=False)
+writer.save()
 
 sys.exit()
 
