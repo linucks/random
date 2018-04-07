@@ -1,42 +1,13 @@
 #!/usr/bin/env ccp4-python
 
+import cPickle
 import csv
 import os
+import re
 import sys
 import pandas as pd
 from collections import Counter, defaultdict
 from ample.util.sequence_util import Sequence
-
-import cPickle
-
-
-"""
-List of runtypes
-List of mutable residues
-
-Runtype is top structures
-next is residue
-
-Get residue counts across a list of structures
-Get residue counts for 10 lowest energy structures
-Get the maximum configuration and the lowest energy structure with that configuration
-Create a csv file with all data
-
-ddict = {}
-sites = [10, 22, 25, 145, 146, 147, 148, 149, 150, 151, 210, 225, 226, 253, 255, 307, 308, 310, 311, 312, 347]
-for runtype in runtypes:
-    ms = MutSummary(directory=runtype, sites = sites)
-    print("Max config for {0}  is {1} with pdb: {2}".format(runtype, ms.max_config, ms.max_config_pdb)
-    ddict[runtype] = ms
-
-df = Dataframe()
-df['sites'] = sites
-for runt in runtypes:
-    df[runt] = ddict[runt].mutations_by_site()
-    df[runt+'max_config'].max_config_by_site()
-df.to_csv()
-"""
-
 
 class MutationSummary(object):
     """Hold information on the mutations for a set of Rosetta PDBS"""
@@ -57,6 +28,7 @@ class MutationSummary(object):
 
         # Add list of mutations
         self.df = pd.read_table(scorefile, sep='\s*', engine='python')
+
         # Sort by energy
         self.df.sort_values('total_score', inplace=True, ascending=False)
 
@@ -102,17 +74,10 @@ class MutationSummary(object):
     def max_config_by_site(self):
         return list(self.max_config)
 
-if __name__ == '__main__':
-    runtypes = ['sax_softwts', 'sax_softwts_fvrnat']
-    #runtypes = ['sax_softwts_fvrnat']
-    ddict = {}
-    sites = [10, 22, 25, 145, 146, 147, 148, 149, 150, 151, 210, 225, 226, 253, 255, 307, 308, 310, 311, 312, 347]
-    for runtype in runtypes:
-        ms = MutationSummary(directory=runtype, sites=sites)
-        print "CONFIGS ", ms.configs
-        print("Max config for {0}  is {1} with pdb: {2}".format(runtype, ms.max_config, ms.max_config_pdb))
-        ddict[runtype] = ms
+    def top10_pdbs(self):
+        return list(self.df.iloc[0:10, self.df.columns.get_loc('pdb')].values)
 
+def write_csv(ddict):
     df = pd.DataFrame()
     df['sites'] = sites
     for runt in runtypes:
@@ -120,61 +85,38 @@ if __name__ == '__main__':
         df[runt+'_maxconfig'] = ddict[runt].max_config_by_site()
     df.to_csv('mutations.csv', index=False)
 
-    sys.exit()
+def mklinks(ddict):
+    def shrink_name(name):
+        return re.sub('sax_softwts', 'm', name)
+    cdir = 'compare'
+    owd = os.getcwd()
+    os.chdir(cdir)
+    for runtype in ddict.keys():
+        name = shrink_name(runtype)
+        mutsum = ddict[runtype]
+        rdir = os.path.join("..", mutsum.directory)
+        for i, pdb in enumerate(mutsum.top10_pdbs()):
+            pdb_path = os.path.join(rdir, pdb)
+            lname = "{}_{}.pdb".format(name, i+1)
+            os.symlink(pdb_path, lname)
+        # Add symlink to max_config with lowest energy
+        lname = "{}_maxc.pdb".format(name)
+        maxpdb = os.path.join(rdir, mutsum.max_config_pdb)
+        os.symlink(maxpdb, lname)
+    #os.chdir(owd)
+    return
 
+if __name__ == '__main__':
+    runtypes = ['sax_softwts', 'sax_softwts_fvrnat', 'sax_softwts_fvrnat2.0', 'sax_softwts_fvrnat5.0']
+    #runtypes = ['sax_softwts_fvrnat']
+    ddict = {}
+    sites = [10, 22, 25, 145, 146, 147, 148, 149, 150, 151, 210, 225, 226, 253, 255, 307, 308, 310, 311, 312, 347]
+    for runtype in runtypes:
+        print("Runtype: %s" % runtype)
+        ms = MutationSummary(directory=runtype, sites=sites)
+        print("Max config for {0}  is {1} with pdb: {2}".format(runtype, ms.max_config, ms.max_config_pdb))
+        #ms.df.to_csv('foo.csv')
+        ddict[runtype] = ms
 
-
-    # def max_config(mut_config):
-    #     for runt in sorted(mut_config.keys()):
-    #         print "MAX CONFIGURATION FOR ", runt
-    #         mutmax = [0, None]
-    #         for k, pdbs in mut_config[runt].items():
-    #             lmut = len(pdbs)
-    #             if lmut > mutmax[0]:
-    #                 mutmax = [lmut, pdbs]
-    #         print "MAX IS ", k, mutmax
-    #
-    #
-    # # runtypes = [ 'sax_zubieta', 'sax_zubieta_repack', 'sax_jens', 'sax_jens_repack', 'sax_auto' ]
-    # # runtypes = [ 'favour_natural_0.8', 'favour_natural_2.0', 'favour_natural_10.0' ]
-    # runtypes = ['sax_softwts', 'sax_softwts_fvrnat']
-    #
-    # # for x in `cat resfile.* | grep ALLAA | cut -d " " -f 1 | sort -u | xargs`; do echo $x,; done | xargs
-    # sites = [10, 22, 25, 145, 146, 147, 148, 149, 150, 151, 210, 225, 226, 253, 255, 307, 308, 310, 311, 312, 347]
-    # results = [[str(s) for s in sites]]
-    #
-    # mut_config = {}
-    # for runt in runtypes:
-    #     mut_config[runt] = defaultdict(list)
-    #     if False:
-    #         with open(os.path.join(runt, 'top.10')) as f:
-    #             pdbs = [os.path.join(runt, line.strip()) for line in f]
-    #     else:
-    #         pdbs = [os.path.join(runt, f) for f in os.listdir(runt) if f.endswith('pdb')]
-    #     seqs = [Sequence(pdb=p).sequences[0] for p in pdbs]
-    #     print "Checking ", runt
-    # #     for si in sites:
-    # #         c2 = [s[si-1] for s in seqs]
-    # #         print "SITES ", c2
-    #     muts = []
-    #     for i, s in enumerate(seqs):
-    #         x = [s[si-1] for si in sites]
-    #         # print "SITES ",x
-    #         muts.append(x)
-    #         k = "".join(x)
-    #         mut_config[runt][k].append(pdbs[i])
-    #     results.append([])
-    #     for i, si in enumerate(sites):
-    #         c = Counter([m[i] for m in muts])
-    #         print "Pos ", si, ": ", c
-    #         results[-1].append(str(c).lstrip(',Counter({').rstrip('})').translate(None, "'"))
-    #
-    #
-    # max_config(mut_config)
-    #
-    # results = map(list, zip(*results))
-    # with open('mutations.csv', 'w') as w:
-    #     cw = csv.writer(w)
-    #     cw.writerow(['sites']+runtypes)
-    #     for r in results:
-    #         cw.writerow(r)
+    mklinks(ddict)
+    write_csv(ddict)
