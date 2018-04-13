@@ -86,8 +86,12 @@ def FixIntervention(df):
     df.drop('SampleNumber',axis=1)
 
     festival_codes = { 'BoomTown' : ('BT2017',4),
-                       'KC' : ('KC2017',4),
+                       'KC' : ('KC2017',1),
                        'SGP' : ('SGP2017',2)
+                       }
+    festival_codes = { 4 : ('BT2017',4),
+                       1 : ('KC2017',1),
+                       2 : ('SGP2017',2)
                        }
     # Delete any columns where Festival is nan
     df['Festival'].dropna(inplace=True)
@@ -129,18 +133,17 @@ def condition_data(df):
 
 fn_testing = '2017 The Loop - collated sample data.xlsx'
 df1 = pd.read_excel(fn_testing ,sheetname='Collated Data', converters={'Sample submission time': str})
-#df1 = pd.read_excel(fn_testing ,sheetname=4, converters={'Sample submission time': str})
 df1.rename(columns=lambda x: x.translate(str.maketrans(' /()?','_____')), inplace=True)
 condition_data(df1)
 
-fn_intervention = 'The_Loop_2017_Final_Interventions.xlsx'  
 fn_intervention = 'The_Loop_2017_Final_Interventions_labels.xlsx'  
+fn_intervention = 'The_Loop_2017_Final_Interventions.xlsx'  
 df2 = pd.read_excel(fn_intervention, converters={'Date': str, 'Time' : str})
 FixIntervention(df2)
 
 dft = pd.merge(df1, df2, how='inner', on=['Event_Name','Sample_Number'])
 
-writer = pd.ExcelWriter('merge.xlsx')
+writer = pd.ExcelWriter('merged.xlsx')
 dft.to_excel(writer,'MergedData',index=False)
 writer.save()
 
