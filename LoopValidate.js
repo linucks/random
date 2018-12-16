@@ -1,26 +1,19 @@
-class DataFrame {
+var DataFrame = function(range){
+  this.range = range;
+  // this.values = range.getValues();
+  this.data = [ ["Column1","Column2","Column3","Column4"],
+                  ["C1R1","C2R1","dup","C4R1"],
+                  ["C1R2","C2R2","C3R2","C4R2"],
+                  ["C1R3","C2R3","C3R3","C4R3"],
+                  ["C1R4","C2R4","dup","C4R4"],
+                ];
 
-  constructor(range) {
-    this.range = range;
-    // this.values = range.getValues();
-    this.data = [ ["Column1","Column2","Column3","Column4"],
-                    ["C1R1","C2R1","dup","C4R1"],
-                    ["C1R2","C2R2","C3R2","C4R2"],
-                    ["C1R3","C2R3","C3R3","C4R3"],
-                    ["C1R4","C2R4","dup","C4R4"],
-                  ];
-    this.initialise();
-  }
+  // this.data = this.range.getValues();
+  this.columns = this.data.shift(); // remove column header
+  this.numColumns = this.columns.length;
+  this.numRows = this.data.length
 
-  initialise() {
-    // this.data = this.range.getValues();
-    this.data = this.data;
-    this.columns = this.data.shift(); // remove column header
-    this.numColumns = this.columns.length;
-    this.numRows = this.data.length
-  }
-
-  duplicates(colName) {
+  this.duplicates = function(colName) {
     /* Return the indexes of any duplicate items in column colName */
     let cidx = this.columns.indexOf(colName);
     if (cidx == -1) {
@@ -45,7 +38,7 @@ class DataFrame {
     return duplicates;
   } // End duplicates
 
-  select(rows, columns){
+  this.select = function(rows, columns){
     /* Select data based on indexes of rows and column names */
     if (columns === undefined) {
       columns = this.columns;
