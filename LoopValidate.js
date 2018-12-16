@@ -52,18 +52,20 @@ var DataFrame = function(range){
       }
       column_idxs.push(idx);
     }
-    var getData = function(idx) {
-      return column_idxs.map(cidx => this.data[idx][cidx]);
+
+    var getRows = function(idx) {
+      var row = this.data[idx];
+      return column_idxs.map(function(idx){return row[idx]});
     }
-    return rows.map(getData.bind(this));;
+    
+    return rows.map(getRows.bind(this));
   } //End select
 
 } // End Class
 
 df = new DataFrame(null);
-console.log(df.duplicates('Column3'));
-console.log(df.select([1, 3], ['Column2', 'Column3']));
-
+// console.log(df.duplicates('Column3'));
+console.log(df.select([1, 3], ['Column1', 'Column3']));
 
 /*
 var ss = SpreadsheetApp.getActive()
