@@ -15,13 +15,13 @@ var DataFrame = function(range){
 
   this.duplicates = function(colName) {
     /* Return the indexes of any duplicate items in column colName */
-    let cidx = this.columns.indexOf(colName);
+    var cidx = this.columns.indexOf(colName);
     if (cidx == -1) {
       throw new Error("Could not find colName " + colName);
     }
-    let counts = [];
-    for (let i=0; i < this.numRows; i++) {
-      let value = this.data[i][cidx];
+    var counts = [];
+    for (var i=0; i < this.numRows; i++) {
+      var value = this.data[i][cidx];
       if (counts[value] === undefined) {
         counts[value] = 1;
       } else {
@@ -29,8 +29,8 @@ var DataFrame = function(range){
       }
     }
     var duplicates = [];
-    for (let i=0; i < this.numRows; i++) {
-      let value = this.data[i][cidx];
+    for (var i=0; i < this.numRows; i++) {
+      var value = this.data[i][cidx];
       if (counts[value] > 1){
         duplicates.push(i);
       }
@@ -45,7 +45,7 @@ var DataFrame = function(range){
     }
     var column_idxs = [];
     var idx;
-    for (let i=0; i < columns.length; i++) {
+    for (var i=0; i < columns.length; i++) {
       idx = this.columns.indexOf(columns[i]);
       if (idx == -1) {
         throw new Error("Cannot find column: " + columns[i]);
@@ -57,7 +57,7 @@ var DataFrame = function(range){
       var row = this.data[idx];
       return column_idxs.map(function(idx){return row[idx]});
     }
-    
+
     return rows.map(getRows.bind(this));
   } //End select
 
