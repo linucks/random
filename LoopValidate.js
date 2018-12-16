@@ -9,25 +9,25 @@ function onOpen() {
 function validateData() {
   //var sheet = s.getSheetByName('Catalog')
   var ss = SpreadsheetApp.getActive()
-  var catalog = DataFrame(ss.getRange('Catalog!A:R'));
+  var catalog = new DataFrame(ss.getRange('Catalog!A:R'));
   var duplicates = catalog.duplicates('Sample Number');
   if (duplicates.length) {
     var data = catalog.select(duplicates,
-                              ['Sample Number', 'Your name and surname initial']);
+                              ['Sample Number', 'Your name and first initial']);
     SpreadsheetApp.getUi().alert("Got duplicates: " + data.join('\n'));
   }
 }
 
+
 var DataFrame = function(range){
   this.range = range;
-  // this.values = range.getValues();
- this.data = [ ["Column1","Column2","Column3","Column4"],
-                 ["C1R1","C2R1","dup","C4R1"],
-                 ["C1R2","C2R2","C3R2","C4R2"],
-                 ["C1R3","C2R3","C3R3","C4R3"],
-                 ["C1R4","C2R4","dup","C4R4"],
-               ];
-
+  // this.data = range.getValues();
+  this.data = [ ["Column1","Column2","Column3","Column4"],
+                  ["C1R1","C2R1","dup","C4R1"],
+                  ["C1R2","C2R2","C3R2","C4R2"],
+                  ["C1R3","C2R3","C3R3","C4R3"],
+                  ["C1R4","C2R4","dup","C4R4"],
+                ];
   this.columns = this.data.shift(); // remove column header
   this.numColumns = this.columns.length;
   this.numRows = this.data.length
@@ -83,6 +83,6 @@ var DataFrame = function(range){
 } // End Class
 
 
-df = new DataFrame(null);
+var df = new DataFrame(null);
 // console.log(df.duplicates('Column3'));
 console.log(df.select([1, 3], ['Column1', 'Column3']));
