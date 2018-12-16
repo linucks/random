@@ -3,7 +3,7 @@ class DataFrame {
   constructor(range) {
     this.range = range;
     // this.values = range.getValues();
-    this.values = [ ["Column1","Column2","Column3","Column4"],
+    this.data = [ ["Column1","Column2","Column3","Column4"],
                     ["C1R1","C2R1","dup","C4R1"],
                     ["C1R2","C2R2","C3R2","C4R2"],
                     ["C1R3","C2R3","C3R3","C4R3"],
@@ -13,62 +13,75 @@ class DataFrame {
   }
 
   initialise() {
-    this.columns = this.values[0];
+    // this.data = this.range.getValues();
+    this.data = this.data;
+    this.columns = this.data.shift(); // remove column header
     this.numColumns = this.columns.length;
-    this.numRows = this.values.length - 1; // exclude column headers
+    this.numRows = this.data.length
   }
 
-  has_duplicates(colName) {
-    let cidx = this.columns.indexOf(colName);
-    if (cidx == -1) {
-      throw new Error("Could not find colName " + colName);
-    }
-    let counts = [];
-    for (let i=1; i <= this.numRows; i++) {
-      let value = this.values[i][cidx];
-      if (counts[value] === undefined) {
-        counts[value] = 1;
-      } else {
-        return true;
-      }
-    }
-    return false;
-  } // End has_duplicates
-
   duplicates(colName) {
+    /* Return the indexes of any duplicate items in column colName */
     let cidx = this.columns.indexOf(colName);
     if (cidx == -1) {
       throw new Error("Could not find colName " + colName);
     }
-    // Find any items that are present more than once
     let counts = [];
-    for (let i=1; i <= this.numRows; i++) {
-      let value = this.values[i][cidx];
+    for (let i=0; i < this.numRows; i++) {
+      let value = this.data[i][cidx];
       if (counts[value] === undefined) {
         counts[value] = 1;
       } else {
         counts[value] += 1;
       }
     }
-    // Create boolean array indicating duplicates
-    var duplicates = new Array(this.numRows).fill(false);;
-    for (let i=1; i <= this.numRows; i++) {
-      let value = this.values[i][cidx];
+    var duplicates = [];
+    for (let i=0; i < this.numRows; i++) {
+      let value = this.data[i][cidx];
       if (counts[value] > 1){
-        duplicates[i] = true;
+        duplicates.push(i);
       }
     }
     return duplicates;
   } // End duplicates
 
+  select(rows, columns){
+    /* Select data based on indexes of rows and column names */
+    if (columns === undefined) {
+      columns = this.columns;
+    }
+    var column_idxs = [];
+    var idx;
+    for (let i=0; i < columns.length; i++) {
+      idx = this.columns.indexOf(columns[i]);
+      if (idx == -1) {
+        throw new Error("Cannot find column: " + columns[i]);
+      }
+      column_idxs.push(idx);
+    }
+    var getData = function(idx) {
+      return column_idxs.map(cidx => this.data[idx][cidx]);
+    }
+    return rows.map(getData.bind(this));;
+  } //End select
+
 } // End Class
 
 df = new DataFrame(null);
-// console.log("GOT " + df.values.join("\n"));
 console.log(df.duplicates('Column3'));
+console.log(df.select([1, 3], ['Column2', 'Column3']));
 
-// if df.has_duplicates('Column1') {
-//   console.log("Duplicates for Column 1");
-//   duplicates = df.duplicated('Column1');
-//   console.log(df.select(duplicates));
-// }
+
+/*
+var ss = SpreadsheetApp.getActive()
+var catalog = DataFrame(ss.getRange('Catalog!A:R'));
+var duplicates = catalog.duplicates('Sample Number');
+if (duplicates.length) {
+  var data = catalog.select(duplicates,
+                            ['Sample Number', 'Your name and surname initial']);
+  console.log("Got duplicates: " + data.join('\n'));
+}
+*/
+ // var cells = ss.getRange('Catalog!A:R')
+ // var sheet = s.getSheetByName('Catalog')
+ // SpreadsheetApp.getUi().alert('Got data ' + ss.getRange('Catalog!A:R').getValues().join("\n"));
