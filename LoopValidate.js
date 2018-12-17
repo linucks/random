@@ -14,26 +14,37 @@ function validateData() {
   if (duplicates.length) {
     var data = catalog.select(duplicates,
                               ['Sample Number', 'Your name and first initial']);
-    SpreadsheetApp.getUi().alert("Got duplicates: " + data.join('\n'));
+    SpreadsheetApp.getUi().alert("Got duplicates:\n" + data.join('\n'));
   }
 }
 
 
 var DataFrame = function(range){
   this.range = range;
-  // this.data = range.getValues();
-  this.data = [ ["Column1","Column2","Column3","Column4"],
-                  ["C1R1","C2R1","dup","C4R1"],
-                  ["C1R2","C2R2","C3R2","C4R2"],
-                  ["C1R3","C2R3","C3R3","C4R3"],
-                  ["C1R4","C2R4","dup","C4R4"],
-                ];
+  this.data = [];
+
+  if (false) {
+    // Prune empty rows
+    var values = range.getValues();
+    var rowlen = 0;
+    for (var i=0; i < values.length; i++) {
+      rowlen = values[i].reduce(function(acc, val){return val.hasOwnProperty('length') ? acc + val.length : acc + 1}, 0);
+      if (rowlen > 0) {this.data.push(values[i])};
+    }
+  } else {
+    this.data = [ ["Column1","Column2","Column3","Column4"],
+                    ["C1R1","C2R1","dup","C4R1"],
+                    ["C1R2","C2R2","C3R2","C4R2"],
+                    ["C1R3","C2R3","C3R3","C4R3"],
+                    ["C1R4","C2R4","dup","C4R4"]];
+    }
+
   this.columns = this.data.shift(); // remove column header
   this.numColumns = this.columns.length;
   this.numRows = this.data.length
 
+  /* Return the indexes of any duplicate items in column colName */
   this.duplicates = function(colName) {
-    /* Return the indexes of any duplicate items in column colName */
     var cidx = this.columns.indexOf(colName);
     if (cidx == -1) {
       throw new Error("Could not find colName " + colName);
@@ -41,6 +52,8 @@ var DataFrame = function(range){
     var counts = [];
     for (var i=0; i < this.numRows; i++) {
       var value = this.data[i][cidx];
+      // Ignore empty strings
+      if (value === undefined || (typeof value == 'string' && value.length == 0)) {continue};
       if (counts[value] === undefined) {
         counts[value] = 1;
       } else {
@@ -57,11 +70,12 @@ var DataFrame = function(range){
     return duplicates;
   } // End duplicates
 
+  /* Select data based on indexes of rows and column names */
   this.select = function(rows, columns){
-    /* Select data based on indexes of rows and column names */
     if (columns === undefined) {
       columns = this.columns;
     }
+    // Determine which columns we are returning
     var column_idxs = [];
     var idx;
     for (var i=0; i < columns.length; i++) {
@@ -71,12 +85,11 @@ var DataFrame = function(range){
       }
       column_idxs.push(idx);
     }
-
+    // Return the rows and columns
     var getRows = function(idx) {
       var row = this.data[idx];
       return column_idxs.map(function(idx){return row[idx]});
     }
-
     return rows.map(getRows.bind(this));
   } //End select
 
