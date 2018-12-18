@@ -18,7 +18,6 @@ function validateData() {
   }
 }
 
-
 var DataFrame = function(range){
   this.range = range;
   this.data = [];
@@ -71,13 +70,12 @@ var DataFrame = function(range){
   } // End duplicates
 
   /* Select data based on indexes of rows and column names */
-  this.select = function(rows, columns){
+  this.select = function(row_idxs, columns){
     if (columns === undefined) {
       columns = this.columns;
     }
     // Determine which columns we are returning
-    var column_idxs = [];
-    var idx;
+    var idx, column_idxs = [];
     for (var i=0; i < columns.length; i++) {
       idx = this.columns.indexOf(columns[i]);
       if (idx == -1) {
@@ -85,13 +83,23 @@ var DataFrame = function(range){
       }
       column_idxs.push(idx);
     }
-    // Return the rows and columns
-    var getRows = function(idx) {
-      var row = this.data[idx];
-      return column_idxs.map(function(idx){return row[idx]});
-    }
-    return rows.map(getRows.bind(this));
+    return this.get_rows_and_columns(row_idxs,column_idxs);
   } //End select
+
+  this.get_rows_and_columns = function (row_idxs, column_idxs){
+    var selected = [];
+    for (var i=0; i < this.data.length; i++) {
+      if (row_idxs.indexOf(i) == -1) {continue};
+      var row = [];
+      for (var j=0; j < this.data[i].length; j++) {
+        if (column_idxs.indexOf(j) != -1 ) {
+          row.push(this.data[i][j]);
+        }
+      }
+      selected.push(row);
+    }
+    return selected;
+  } // End get_rows_and_columns
 
 } // End Class
 
