@@ -20,7 +20,7 @@ function validateData() {
 
 var DataFrame = function(range, key, name){
 
-  this.init_me = function(range, key, name){
+  this.init = function(range, key, name){
       if (name === undefined) {
         this.name = 'dataframe';
       } else {
@@ -157,7 +157,7 @@ var DataFrame = function(range, key, name){
     return differences;
   }
 
-  this.init_me(range, key, name);
+  this.init(range, key, name);
 
 } // End Class
 
@@ -183,5 +183,5 @@ var df1 = new DataFrame(null, 'Index');
 // console.log(df1.select([1, 3], ['Column2', 'Column3']));
 var df2 = new DataFrame(null, 'Index', 'd2');
 
-console.log(column_differences([df1, df2],['Column2']));
+console.log(column_differences([df1, df2, df1],['Column2']));
 // console.log(df1.column_difference(df2, 'Column2'));
