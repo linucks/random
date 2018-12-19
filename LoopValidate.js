@@ -169,9 +169,9 @@ function column_differences(dataframes, columns){
     for (var j=0; j < columns.length; j++) {
       column = columns[j];
       var differences = d1.column_difference(d2, column);
-      if (differences) {
+      if (differences.length) {
         for (var k=0; k < differences.length; k++) {
-          console.log("Got differences: %s:%s[%s] (%s)->(%s)" % (d1.name, d2.name, column, differences[k][0],differences[k][1]))
+          console.log("Got differences: " + d1.name + ":" + d2.name + "   [" + column + "] \"" + differences[k][0] + "\" -> \"" + differences[k][1] + "\"")
         }
       }
     }
@@ -180,8 +180,8 @@ function column_differences(dataframes, columns){
 }
 var df1 = new DataFrame(null, 'Index');
 // console.log(df.duplicates('Column3'));
-console.log(df1.select([1, 3], ['Column2', 'Column3']));
+// console.log(df1.select([1, 3], ['Column2', 'Column3']));
 var df2 = new DataFrame(null, 'Index', 'd2');
 
-// console.log(column_differences([df1, df2],['Column2']));
-console.log(df1.column_difference(df2, 'Column2'));
+console.log(column_differences([df1, df2],['Column2']));
+// console.log(df1.column_difference(df2, 'Column2'));
