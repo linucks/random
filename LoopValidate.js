@@ -9,13 +9,22 @@ function onOpen() {
 function validateData() {
   //var sheet = s.getSheetByName('Catalog')
   var ss = SpreadsheetApp.getActive()
-  var catalog = new DataFrame(ss.getRange('Catalog!A:R'));
-  var duplicates = catalog.duplicates('Sample Number');
-  if (duplicates.length) {
-    var data = catalog.select(duplicates,
-                              ['Sample Number', 'Your name and first initial']);
-    SpreadsheetApp.getUi().alert("Got duplicates:\n" + data.join('\n'));
+
+  var catalog = new DataFrame(ss.getRange('Catalog!A:R'), 'Sample Number', 'catalog');
+  var ftir = new DataFrame(ss.getRange('FTIR!A:X', 'Sample Number', 'ftir'));
+  var reagent = new DataFrame(ss.getRange('Reagent!A:W', 'Sample Number', 'reagent'));
+  var mla = new DataFrame(ss.getRange('MLA!A:R', 'Sample Number', 'mla'));
+  var hr = new DataFrame(ss.getRange('Interventions!A:BJ', 'Sample Number', 'hr'));
+  var dataframes = [catalog, ftir, reagent, mla, hr];
+  var duplicates;
+  for (d in dataframes) {
+    duplicates = dataframes[d].duplicates('Sample Number');
+    if (duplicates.length) {
+      var data = dataframes[d].select(duplicates,
+                                ['Sample Number', 'Your name and first initial']);
+                              }
   }
+  SpreadsheetApp.getUi().alert("Got duplicates:\n" + data.join('\n'));
 }
 
 var DataFrame = function(range, key, name){
