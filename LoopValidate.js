@@ -10,26 +10,29 @@ function validateData() {
   //var sheet = s.getSheetByName('Catalog')
   var ss = SpreadsheetApp.getActive()
 
-  var catalog = new DataFrame(ss.getRange('Catalog!A:R'), 'Sample Number', 'catalog');
-  var ftir = new DataFrame(ss.getRange('FTIR!A:X', 'Sample Number', 'ftir'));
-  var reagent = new DataFrame(ss.getRange('Reagent!A:W', 'Sample Number', 'reagent'));
-  var mla = new DataFrame(ss.getRange('MLA!A:R', 'Sample Number', 'mla'));
-  var hr = new DataFrame(ss.getRange('Interventions!A:BJ', 'Sample Number', 'hr'));
+  var catalog = new DataFrame(ss.getRange('Catalog!A:R').getValues(), 'Sample Number', 'catalog');
+  var ftir = new DataFrame(ss.getRange('FTIR!A:X').getValues(), 'Sample Number', 'ftir');
+  var reagent = new DataFrame(ss.getRange('Reagent!A:W').getValues(), 'Sample Number', 'reagent');
+  var mla = new DataFrame(ss.getRange('MLA!A:R').getValues(), 'Sample Number', 'mla');
+  var hr = new DataFrame(ss.getRange('Interventions!A:BJ').getValues(), 'Sample Number', 'hr');
+
   var dataframes = [catalog, ftir, reagent, mla, hr];
-  var duplicates;
+  var duplicates, data, ret="";
   for (d in dataframes) {
     duplicates = dataframes[d].duplicates('Sample Number');
     if (duplicates.length) {
-      var data = dataframes[d].select(duplicates,
-                                ['Sample Number', 'Your name and first initial']);
-                              }
+      data = dataframes[d].select(duplicates, ['Sample Number', 'Your name and first initial']);
+      ret += "Got duplicates for sheet[" + d.name +"]\n" + data.join('\n') + "\n";
+    }
   }
-  SpreadsheetApp.getUi().alert("Got duplicates:\n" + data.join('\n'));
+  if (ret.length) {
+    SpreadsheetApp.getUi().alert(ret);
+  }
 }
 
-var DataFrame = function(range, key, name){
+var DataFrame = function(values, key, name){
 
-  this.init = function(range, key, name){
+  this.init = function(values, key, name){
       if (name === undefined) {
         this.name = 'dataframe';
       } else {
@@ -38,26 +41,7 @@ var DataFrame = function(range, key, name){
       if (key === undefined) {
         throw new Error("Need db key!");
       }
-
-      this.range = range;
       this.data = [];
-      if (this.range != null) {
-        var values = range.getValues();
-      }  else {
-        if (this.name == 'd2') {
-          var values = [ ["Index","Column2","Column3","Column4"],
-                          ["I1","X2R1","dup","C4R1"],
-                          ["I2","C2R2","C3R2","C4R2"],
-                          ["I3","C2R3","C3R3","C4R3"],
-                          ["I4","X2R4","dup","C4R4"]];
-          } else {
-            var values = [ ["Index","Column2","Column3","Column4"],
-                            ["I1","C2R1","dup","C4R1"],
-                            ["I2","C2R2","C3R2","C4R2"],
-                            ["I3","C2R3","C3R3","C4R3"],
-                            ["I4","C2R4","dup","C4R4"]];
-          }
-      }
 
       // Prune empty rows and set key
       var rowlen = 0;
@@ -166,7 +150,7 @@ var DataFrame = function(range, key, name){
     return differences;
   }
 
-  this.init(range, key, name);
+  this.init(values, key, name);
 
 } // End Class
 
@@ -187,10 +171,23 @@ function column_differences(dataframes, columns){
     d1 = d2;
   }
 }
-var df1 = new DataFrame(null, 'Index');
+
+var values1 = [ ["Index","Column2","Column3","Column4"],
+                ["I1","X2R1","dup","C4R1"],
+                ["I2","C2R2","C3R2","C4R2"],
+                ["I3","C2R3","C3R3","C4R3"],
+                ["I4","X2R4","dup","C4R4"]];
+
+var values2 = [ ["Index","Column2","Column3","Column4"],
+                ["I1","C2R1","dup","C4R1"],
+                ["I2","C2R2","C3R2","C4R2"],
+                ["I3","C2R3","C3R3","C4R3"],
+                ["I4","C2R4","dup","C4R4"]];
+
+var df1 = new DataFrame(values1, 'Index');
 // console.log(df.duplicates('Column3'));
 // console.log(df1.select([1, 3], ['Column2', 'Column3']));
-var df2 = new DataFrame(null, 'Index', 'd2');
+var df2 = new DataFrame(values2, 'Index', 'd2');
 
 console.log(column_differences([df1, df2, df1],['Column2']));
 // console.log(df1.column_difference(df2, 'Column2'));
