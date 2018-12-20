@@ -13,16 +13,15 @@ function validateData() {
   var catalog = new DataFrame(ss.getRange('Catalog!A:R').getValues(), 'Sample Number', 'catalog');
   var ftir = new DataFrame(ss.getRange('FTIR!A:X').getValues(), 'Sample Number', 'ftir');
   var reagent = new DataFrame(ss.getRange('Reagent!A:W').getValues(), 'Sample Number', 'reagent');
-  var mla = new DataFrame(ss.getRange('MLA!A:R').getValues(), 'Sample Number', 'mla');
-  var hr = new DataFrame(ss.getRange('Interventions!A:BJ').getValues(), 'Sample Number', 'hr');
 
-  var dataframes = [catalog, ftir, reagent, mla, hr];
+  Logger.log("catalog name is " + catalog.name);
+  var dataframes = [catalog, ftir, reagent];
   var duplicates, data, ret="";
   for (d in dataframes) {
     duplicates = dataframes[d].duplicates('Sample Number');
     if (duplicates.length) {
-      data = dataframes[d].select(duplicates, ['Sample Number', 'Your name and first initial']);
-      ret += "Got duplicates for sheet[" + d.name +"]\n" + data.join('\n') + "\n";
+      data = dataframes[d].select(duplicates, ['Sample Number']);
+      ret += "Got duplicates for sheet[" + dataframes[d].name +"]\n" + data.join('\n') + "\n";
     }
   }
   if (ret.length) {
