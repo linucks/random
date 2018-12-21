@@ -40,21 +40,12 @@ var DataFrame = function(values, key, name){
       if (key === undefined) {
         throw new Error("Need db key!");
       }
-      this.data = [];
-
-      // Prune empty rows and set key
-      var rowlen = 0;
-      for (var i=0; i < values.length; i++) {
-        rowlen = values[i].reduce(function(acc, val){return val.hasOwnProperty('length') ? acc + val.length : acc + 1}, 0);
-        if (rowlen > 0) {this.data.push(values[i])};
-      }
-
+      this.data = this.prune_empty_rows(values);
       this.columns = this.data.shift(); // remove column header
-      this.numColumns = this.columns.length;
       this.numRows = this.data.length;
 
       // set index - will ignore duplicates
-      var keyidx = this.column_indexes(key)[0];
+      var keyidx = this.column_index(key);
       this.index = {};
       for (var i=0; i < this.data.length; i++) {
         var keyv = this.data[i][keyidx];
@@ -62,8 +53,18 @@ var DataFrame = function(values, key, name){
       }
   }
 
+  this.prune_empty_rows = function(data) {
+    var row, row_len = 0, pruned_data=[];
+    for (var i=0; i < data.length; i++) {
+      row = data[i];
+      row_len = row.reduce(function(acc, val){return val.hasOwnProperty('length') ? acc + val.length : acc + 1}, 0);
+      if (row_len > 0) {pruned_data.push(row)};
+    }
+    return pruned_data;
+  }
+
   /* Get the indexes of the supplied columns */
-  this.column_indexes = function(columns) {
+  this.column_index = function(columns) {
     if (!(columns instanceof Array)) {
       columns = [columns];
     }
@@ -75,7 +76,11 @@ var DataFrame = function(values, key, name){
       }
       column_idxs.push(idx);
     }
-    return column_idxs;
+    if (column_idxs.length == 1) {
+      return column_idxs[0];
+    } else {
+      return column_idxs;
+    }
   }
 
   /* Return the indexes of any duplicate items in column colName */
@@ -112,20 +117,18 @@ var DataFrame = function(values, key, name){
     }
     if (columns === undefined) {
       columns = this.columns;
-    } else if (typeof columns === 'string' || columns instanceof String) {
-      columns = [columns];
     }
     return this.get_rows_and_columns(row_idxs, columns);
   } //End select
 
   this.get_rows_and_columns = function (row_idxs, columns){
-    var column_idxs = this.column_indexes(columns);
+    var column_idxs = this.column_index(columns);
     var selected = [];
     for (var i=0; i < this.data.length; i++) {
       if (row_idxs.indexOf(i) == -1) {continue};
       var row = [];
       for (var j=0; j < this.data[i].length; j++) {
-        if (column_idxs.indexOf(j) != -1 ) {
+        if (column_idxs == j || (column_idxs.hasOwnProperty('indexOf') && column_idxs.indexOf(j) != -1 )) {
           row.push(this.data[i][j]);
         }
       }
@@ -148,7 +151,7 @@ var DataFrame = function(values, key, name){
     }
     return differences;
   }
-
+  // As this uses class functions I think it needs to be called at the end?
   this.init(values, key, name);
 
 } // End Class
@@ -188,5 +191,5 @@ var df1 = new DataFrame(values1, 'Index');
 // console.log(df1.select([1, 3], ['Column2', 'Column3']));
 var df2 = new DataFrame(values2, 'Index', 'd2');
 
-console.log(column_differences([df1, df2, df1],['Column2']));
-// console.log(df1.column_difference(df2, 'Column2'));
+// console.log(column_differences([df1, df2, df1],['Column2']));
+console.log(df1.column_difference(df2, 'Column2'));
